@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Picture Perfect</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#252836;--border:#2e3245;--text:#e4e6f0;--text-dim:#8a8fa8;--accent:#4a9eff;--accent2:#ff6b4a;--success:#4aff8b;--warn:#ffb84a}
+  body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+  .header{padding:32px 40px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+  .header h1{font-size:24px;font-weight:700;letter-spacing:-0.5px}
+  .header h1 span{color:var(--accent)}
+  .header .badge{background:var(--accent);color:var(--bg);font-size:11px;font-weight:700;padding:4px 10px;border-radius:4px;letter-spacing:0.5px}
+  .main{display:grid;grid-template-columns:400px 1fr;min-height:calc(100vh - 89px)}
+  .sidebar{padding:24px;border-right:1px solid var(--border);overflow-y:auto;max-height:calc(100vh - 89px)}
+  .section-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:16px;margin-top:24px}
+  .section-title:first-child{margin-top:0}
+  .thumb-wrap{margin-top:12px;border-radius:6px;overflow:hidden;display:none}
+  .thumb-wrap img{width:100%;display:block;border-radius:6px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;font-weight:400;color:var(--text-dim);margin-bottom:6px}
+  .field input,.field select{width:100%;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px;outline:none;transition:border-color 0.2s}
+  .field input:focus,.field select:focus{border-color:var(--accent)}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .slider-wrap{display:flex;align-items:center;gap:12px}
+  .slider-wrap input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:6px;background:var(--surface2);border-radius:3px;outline:none}
+  .slider-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg)}
+  .slider-wrap input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg)}
+  .slider-val{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--accent);min-width:55px;text-align:right}
+  .dual-slider{position:relative;height:30px;margin:10px 0}
+  .dual-slider input[type=range]{position:absolute;width:100%;pointer-events:none;-webkit-appearance:none;appearance:none;height:6px;background:transparent;top:12px}
+  .dual-slider input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:all;width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid var(--bg);position:relative;z-index:2}
+  .dual-slider input[type=range]::-moz-range-thumb{pointer-events:all;width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid var(--bg);position:relative;z-index:2}
+  .dual-slider .slider-min::-webkit-slider-thumb{background:var(--warn)}
+  .dual-slider .slider-max::-webkit-slider-thumb{background:var(--accent)}
+  .dual-slider .slider-min::-moz-range-thumb{background:var(--warn)}
+  .dual-slider .slider-max::-moz-range-thumb{background:var(--accent)}
+  .dual-slider .track{position:absolute;top:12px;height:6px;background:var(--surface2);width:100%;border-radius:3px}
+  .dual-slider .track-fill{position:absolute;top:12px;height:6px;background:var(--accent);border-radius:3px;opacity:0.4}
+  .dual-labels{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:13px;margin-top:2px}
+  .dual-labels .lbl-min{color:var(--warn)}
+  .dual-labels .lbl-max{color:var(--accent)}
+  .btn{width:100%;padding:12px;border:none;border-radius:6px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;margin-top:8px}
+  .btn-export{background:var(--success);color:var(--bg)}
+  .btn-export:hover{background:#6affaa}
+  .btn-export:disabled{opacity:0.4;cursor:not-allowed}
+  .btn-dxf{background:var(--warn);color:var(--bg)}
+  .btn-dxf:hover{background:#ffc95e}
+  .btn-dxf:disabled{opacity:0.4;cursor:not-allowed}
+  .btn-png{background:#7c4aff;color:#fff}
+  .btn-png:hover{background:#9465ff}
+  .btn-png:disabled{opacity:0.4;cursor:not-allowed}
+  .btn-jpg{background:#c44aff;color:#fff}
+  .btn-jpg:hover{background:#d465ff}
+  .btn-jpg:disabled{opacity:0.4;cursor:not-allowed}
+  .btn-json-export{background:#4affd6;color:var(--bg)}
+  .btn-json-export:hover{background:#6affe0}
+  .btn-json-export:disabled{opacity:0.4;cursor:not-allowed}
+  .btn-json-load{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+  .btn-json-load:hover{background:var(--border)}
+  .rule-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:12px}
+  .rule-box h3{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--warn);margin-bottom:10px}
+  .rule-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+  .rule-row .label{color:var(--text-dim)}
+  .rule-row .value{font-family:'JetBrains Mono',monospace;color:var(--text)}
+  .tool-section{margin-top:14px;border-top:1px solid var(--border);padding-top:14px}
+  .tool-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .tool-header span{font-size:12px;color:var(--text-dim);font-weight:600;letter-spacing:0.5px;text-transform:uppercase}
+  .tool-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+  .tool-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);padding:5px 10px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);cursor:pointer;user-select:none;transition:opacity 0.15s}
+  .tool-chip.hidden{opacity:0.35;text-decoration:line-through;color:var(--text-dim);border-color:var(--text-dim)}
+  .tool-chip.custom{border-color:var(--warn);color:var(--warn)}
+  .tool-chip .remove-x{cursor:pointer;color:var(--accent2);font-weight:700;font-size:14px;line-height:1}
+  .tool-chip .remove-x:hover{color:#ff8a6a}
+  .custom-add{display:flex;gap:6px;align-items:center}
+  .custom-add input{width:80px;padding:6px 8px;font-size:12px}
+  .custom-add button{padding:6px 12px;font-size:12px;border:1px solid var(--border);border-radius:4px;background:var(--surface2);color:var(--accent);cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600}
+  .custom-add button:hover{background:var(--border)}
+  .error-box{background:rgba(255,107,74,0.1);border:1px solid var(--accent2);border-radius:8px;padding:14px;margin-top:12px;display:none;font-size:13px;color:var(--accent2)}
+  .stats{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;display:none}
+  .stats h3{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+  .stat-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+  .stat-row .label{color:var(--text-dim)}
+  .stat-row .value{font-family:'JetBrains Mono',monospace;color:var(--text)}
+  .breakdown{margin-top:12px;border-top:1px solid var(--border);padding-top:12px}
+  .breakdown h4{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--warn);margin-bottom:8px}
+  .bd-row{display:flex;align-items:center;font-size:12px;padding:3px 0;gap:8px}
+  .bd-row .sz{font-family:'JetBrains Mono',monospace;color:var(--accent);min-width:70px}
+  .bd-row .bar-wrap{flex:1;background:var(--surface2);height:6px;border-radius:3px;overflow:hidden}
+  .bd-row .bar{height:100%;background:var(--accent);border-radius:3px;min-width:2px}
+  .bd-row .ct{font-family:'JetBrains Mono',monospace;color:var(--text);min-width:50px;text-align:right}
+  .canvas-wrap{padding:24px;display:flex;align-items:center;justify-content:center;overflow:auto}
+  .canvas-wrap.drag-over{background:rgba(74,158,255,0.07);outline:2px dashed var(--accent);}
+  .canvas-wrap canvas{background:#1e2030;border-radius:8px;max-width:100%;max-height:calc(100vh - 140px)}
+  .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:16px;gap:12px}
+  .empty-state .big-icon{font-size:64px;opacity:0.3}
+  .invert-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .invert-row label{font-size:13px;color:var(--text-dim);cursor:pointer}
+  .toggle{position:relative;width:40px;height:22px;background:var(--surface2);border-radius:11px;cursor:pointer;transition:background 0.2s;border:1px solid var(--border)}
+  .toggle.on{background:var(--accent);border-color:var(--accent)}
+  .toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:white;border-radius:50%;transition:transform 0.2s}
+  .toggle.on::after{transform:translateX(18px)}
+  .export-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .export-row .btn{margin-top:0}
+  .perf-word{
+    background: 
+      radial-gradient(circle, transparent 40%, var(--accent) 40%) 0 0 / 10px 10px;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Picture <span class="perf-word">Perf</span>ect</h1>
+  <div class="badge">BETA</div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+
+    <div class="section-title">Image</div>
+    <div class="thumb-wrap" id="thumbWrap">
+      <img id="thumbImg" src="" alt="preview">
+    </div>
+    <input type="file" id="fileInput" accept="image/*" style="display:none">
+
+    <div class="section-title">Panel Dimensions (Inches)</div>
+    <div class="field-row">
+      <div class="field">
+        <label>Height</label>
+        <input type="number" id="panelH" value="48" step="0.25">
+      </div>
+      <div class="field">
+        <label>Width</label>
+        <input type="number" id="panelW" value="48" step="0.25">
+      </div>
+    </div>
+    <div class="field">
+      <label>Margin</label>
+      <input type="number" id="margin" value="0" step="0.25">
+    </div>
+
+    <div class="section-title">Material</div>
+    <div class="field">
+      <label>Material Thickness (Inches)</label>
+      <input type="number" id="matThk" value="0.19" step="0.001">
+    </div>
+
+    <div class="section-title">Tooling</div>
+    <div class="field">
+      <label>Tool Diameter Range</label>
+      <div class="dual-slider" id="dualSlider">
+        <div class="track"></div>
+        <div class="track-fill" id="trackFill"></div>
+        <input type="range" class="slider-min" id="sliderMin" min="0.125" max="3" step="0.0625" value="0.1875">
+        <input type="range" class="slider-max" id="sliderMax" min="0.125" max="3" step="0.0625" value="1.0625">
+      </div>
+      <div class="dual-labels">
+        <span class="lbl-min">Min: <span id="minDiaVal">0.188"</span></span>
+        <span class="lbl-max">Max: <span id="maxDiaVal">1.063"</span></span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Number of Tool Sizes</label>
+      <div class="slider-wrap">
+        <input type="range" id="toolCountSlider" min="2" max="15" step="1" value="8">
+        <span class="slider-val" id="toolCountVal">8</span>
+      </div>
+    </div>
+
+    <div class="rule-box">
+      <h3>Calculated Values</h3>
+      <div class="rule-row"><span class="label">Min Tool</span><span class="value" id="ruleMin">-</span></div>
+      <div class="rule-row"><span class="label">Max Tool</span><span class="value" id="ruleMax">-</span></div>
+      <div class="rule-row"><span class="label">CTC Spacing</span><span class="value" id="ruleCTC">-</span></div>
+      <div class="rule-row"><span class="label">Min Edge Gap</span><span class="value" id="ruleGap">-</span></div>
+
+      <div class="tool-section">
+        <div class="tool-header">
+          <span>Active Tools (<span id="toolCountLabel">0</span>)</span>
+        </div>
+        <div class="tool-chips" id="toolList"></div>
+        <div class="custom-add">
+          <input type="number" id="customSizeInput" placeholder="e.g. 0.5" step="0.0625" min="0.0625">
+          <button id="customAddBtn">+ Add Custom</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="section-title">Hole Pattern</div>
+    <div class="field">
+      <label>Pattern</label>
+      <select id="pattern">
+        <option value="60">60&deg; Stagger</option>
+        <option value="45">45&deg; Stagger</option>
+        <option value="30">30&deg; Stagger</option>
+        <option value="0">Straight Grid</option>
+      </select>
+    </div>
+
+    <div class="section-title">Options</div>
+    <div class="invert-row">
+      <div class="toggle" id="invertToggle"></div>
+      <label>Invert (Light = Big Holes)</label>
+    </div>
+    <div class="invert-row">
+      <div class="toggle" id="hollowToggle"></div>
+      <label>Hollow Circles</label>
+    </div>
+    <div class="invert-row">
+      <div class="toggle" id="whiteBgToggle"></div>
+      <label>White Background</label>
+    </div>
+    <div class="invert-row">
+      <div class="toggle" id="showImageToggle"></div>
+      <label>Show Image Underlay</label>
+    </div>
+    <div class="field" style="margin-top:6px;margin-bottom:14px">
+      <label>Dither Strength</label>
+      <div class="slider-wrap">
+        <input type="range" id="ditherSlider" min="0" max="1" step="0.05" value="0">
+        <span class="slider-val" id="ditherVal">0.00</span>
+      </div>
+    </div>
+    <div class="field" id="imageOpacityField" style="display:none;margin-top:-6px;margin-bottom:14px">
+      <label>Image Opacity</label>
+      <div class="slider-wrap">
+        <input type="range" id="imageOpacitySlider" min="0" max="100" step="5" value="40">
+        <span class="slider-val" id="imageOpacityVal">40%</span>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:6px;margin-bottom:14px">
+      <label>Gamma / Contrast</label>
+      <div class="slider-wrap">
+        <input type="range" id="gammaSlider" min="0.3" max="3.0" step="0.05" value="1.0">
+        <span class="slider-val" id="gammaVal">1.00</span>
+      </div>
+    </div>
+
+    <div class="export-row" style="margin-top:16px">
+      <button class="btn btn-export" id="exportBtn" disabled>Export CSV</button>
+      <button class="btn btn-dxf" id="dxfBtn" disabled>Export DXF</button>
+    </div>
+    <div class="export-row" style="margin-top:8px">
+      <button class="btn btn-png" id="pngBtn" disabled>Export PNG</button>
+      <button class="btn btn-jpg" id="jpgBtn" disabled>Export JPG</button>
+    </div>
+    <div class="export-row" style="margin-top:8px">
+      <button class="btn btn-json-export" id="jsonExportBtn" disabled>Save JSON</button>
+      <button class="btn btn-json-load" id="jsonLoadBtn">Load JSON</button>
+    </div>
+    <input type="file" id="jsonFileInput" accept=".json" style="display:none">
+
+    <div class="stats" id="statsBox">
+      <h3>Pattern Stats</h3>
+      <div class="stat-row"><span class="label">Total Holes</span><span class="value" id="statHoles">-</span></div>
+      <div class="stat-row"><span class="label">Tool Sizes Used</span><span class="value" id="statSizes">-</span></div>
+      <div class="stat-row"><span class="label">Smallest Used</span><span class="value" id="statMin">-</span></div>
+      <div class="stat-row"><span class="label">Largest Used</span><span class="value" id="statMax">-</span></div>
+      <div class="stat-row"><span class="label">CTC</span><span class="value" id="statCTC">-</span></div>
+      <div class="stat-row"><span class="label">Grid</span><span class="value" id="statGrid">-</span></div>
+      <div class="breakdown">
+        <h4>Holes Per Tool Size</h4>
+        <div id="breakdownList"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <div class="empty-state" id="emptyState">
+      <span class="big-icon">&#9711;</span>
+      <div>Load An Image To Begin</div>
+    </div>
+    <canvas id="preview" style="display:none"></canvas>
+  </div>
+</div>
+
+<script>
+const SIXTEENTH = 1/16;
+let imgEl = null;
+let holeData = [];
+let inverted = false;
+let hollow = false;
+let whiteBg = false;
+let showImage = false;
+let dither = false;
+let ditherStrength = 0;
+let imageOpacity = 0.4;
+let gamma = 1.0;
+let hiddenSizes = new Set();
+let activeSizes = [];
+let customSizes = [];
+
+function roundTo16th(v) { return Math.round(v / SIXTEENTH) * SIXTEENTH; }
+function r4(v) { return Math.round(v * 10000) / 10000; }
+
+function formatSize(val) {
+  return parseFloat(val).toFixed(3) + '"';
+}
+
+function buildAutoSizes(minD, maxD, count) {
+  if (count < 2) count = 2;
+  const sizes = [minD];
+  for (let i = 1; i < count - 1; i++) {
+    const t = i / (count - 1);
+    let raw = minD + t * (maxD - minD);
+    let s = roundTo16th(raw);
+    s = r4(Math.max(minD, Math.min(maxD, s)));
+    if (Math.abs(s - sizes[sizes.length - 1]) > 0.001) sizes.push(s);
+  }
+  if (Math.abs(maxD - sizes[sizes.length - 1]) > 0.001) sizes.push(r4(maxD));
+  return sizes;
+}
+
+function mergeSizes(autoSizes, customs, minD, maxD) {
+  const all = new Set(autoSizes.map(v => r4(v)));
+  for (const c of customs) { const v = r4(c); if (v >= minD && v <= maxD) all.add(v); }
+  return Array.from(all).sort((a, b) => a - b);
+}
+
+function snapToNearest(val, sizes) {
+  let best = sizes[0], bestD = Math.abs(val - best);
+  for (let i = 1; i < sizes.length; i++) { const d = Math.abs(val - sizes[i]); if (d < bestD) { bestD = d; best = sizes[i]; } }
+  return best;
+}
+
+function updateTrackFill() {
+  const sl = document.getElementById('sliderMin');
+  const sr = document.getElementById('sliderMax');
+  const min = parseFloat(sl.min), max = parseFloat(sl.max);
+  const vl = parseFloat(sl.value), vr = parseFloat(sr.value);
+  const pctL = ((vl - min) / (max - min)) * 100;
+  const pctR = ((vr - min) / (max - min)) * 100;
+  const fill = document.getElementById('trackFill');
+  fill.style.left = pctL + '%';
+  fill.style.width = (pctR - pctL) + '%';
+}
+
+function enforceDualSlider() {
+  const matThk = parseFloat(document.getElementById('matThk').value) || 0;
+  const sl = document.getElementById('sliderMin');
+  const sr = document.getElementById('sliderMax');
+
+  if (parseFloat(sl.value) >= parseFloat(sr.value)) {
+    sr.value = r4(parseFloat(sl.value) + SIXTEENTH);
+  }
+
+  const effectiveMin = Math.max(parseFloat(sl.value), matThk);
+  document.getElementById('minDiaVal').textContent = formatSize(effectiveMin);
+  document.getElementById('maxDiaVal').textContent = formatSize(parseFloat(sr.value));
+  updateTrackFill();
+}
+
+function recalc() {
+  enforceDualSlider();
+  const matThk = parseFloat(document.getElementById('matThk').value) || 0;
+  const sliderMin = parseFloat(document.getElementById('sliderMin').value);
+  const minDia = Math.max(sliderMin, matThk);
+  const maxDia = parseFloat(document.getElementById('sliderMax').value);
+  const toolCount = parseInt(document.getElementById('toolCountSlider').value) || 8;
+  const ctc = r4(maxDia + matThk);
+
+  document.getElementById('toolCountVal').textContent = toolCount;
+  document.getElementById('ruleMin').textContent = formatSize(minDia) + '  (' + minDia + ')';
+  document.getElementById('ruleMax').textContent = formatSize(maxDia) + '  (' + maxDia + ')';
+  document.getElementById('ruleCTC').textContent = formatSize(ctc) + '  (' + ctc + ')';
+  document.getElementById('ruleGap').textContent = matThk + '"  (= mat thk)';
+
+  const errorBox = document.getElementById('errorBox');
+  if (maxDia <= minDia) {
+    errorBox.textContent = 'Max must be greater than min tool size.';
+    errorBox.style.display = 'block';
+    activeSizes = []; renderTools(); return false;
+  }
+  errorBox.style.display = 'none';
+
+  const autoSizes = buildAutoSizes(minDia, maxDia, toolCount);
+  activeSizes = mergeSizes(autoSizes, customSizes, minDia, maxDia);
+  renderTools();
+  return true;
+}
+
+function renderTools() {
+  document.getElementById('toolCountLabel').textContent = activeSizes.length;
+  let html = '';
+  for (const s of activeSizes) {
+    const isCustom = customSizes.some(c => Math.abs(r4(c) - s) < 0.001);
+    const isHidden = hiddenSizes.has(r4(s));
+    let cls = isCustom ? ' custom' : '';
+    if (isHidden) cls += ' hidden';
+    const rx = isCustom ? '<span class="remove-x" data-size="' + s + '">&times;</span>' : '';
+    html += '<span class="tool-chip' + cls + '" data-size="' + s + '">' + formatSize(s) + rx + '</span>';
+  }
+  document.getElementById('toolList').innerHTML = html;
+  document.querySelectorAll('.tool-chip').forEach(el => {
+    el.addEventListener('click', function(e) {
+      if (e.target.classList.contains('remove-x')) return;
+      const sz = r4(parseFloat(this.getAttribute('data-size')));
+      if (hiddenSizes.has(sz)) hiddenSizes.delete(sz);
+      else hiddenSizes.add(sz);
+      renderTools();
+      scheduleGenerate();
+    });
+  });
+  document.querySelectorAll('.remove-x').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const sz = parseFloat(this.getAttribute('data-size'));
+      customSizes = customSizes.filter(c => Math.abs(c - sz) > 0.001);
+      hiddenSizes.delete(r4(sz));
+      recalc();
+      scheduleGenerate();
+    });
+  });
+}
+
+document.getElementById('customAddBtn').addEventListener('click', function() {
+  const input = document.getElementById('customSizeInput');
+  const val = parseFloat(input.value);
+  if (!val || val <= 0) return;
+  const minDia = parseFloat(document.getElementById('sliderMin').value);
+  const maxDia = parseFloat(document.getElementById('sliderMax').value);
+  if (val < minDia) { alert('Cannot be smaller than min tool (' + formatSize(minDia) + ').'); return; }
+  if (val > maxDia) { alert('Cannot exceed max tool (' + formatSize(maxDia) + ').'); return; }
+  if (customSizes.some(c => Math.abs(c - val) < 0.001) || activeSizes.some(s => Math.abs(s - val) < 0.001)) { alert('Size already exists.'); return; }
+  customSizes.push(val);
+  input.value = '';
+  recalc();
+  scheduleGenerate();
+});
+
+let generateTimer = null;
+function scheduleGenerate() {
+  if (!imgEl) return;
+  clearTimeout(generateTimer);
+  generateTimer = setTimeout(generate, 300);
+}
+
+document.getElementById('sliderMin').addEventListener('input', function() {
+  if (parseFloat(this.value) >= parseFloat(document.getElementById('sliderMax').value))
+    this.value = r4(parseFloat(document.getElementById('sliderMax').value) - SIXTEENTH);
+  recalc();
+  scheduleGenerate();
+});
+
+document.getElementById('sliderMax').addEventListener('input', function() {
+  if (parseFloat(this.value) <= parseFloat(document.getElementById('sliderMin').value))
+    this.value = r4(parseFloat(document.getElementById('sliderMin').value) + SIXTEENTH);
+  recalc();
+  scheduleGenerate();
+});
+
+document.getElementById('toolCountSlider').addEventListener('input', function() { recalc(); scheduleGenerate(); });
+document.getElementById('matThk').addEventListener('input', function() { recalc(); scheduleGenerate(); });
+document.getElementById('panelH').addEventListener('input', scheduleGenerate);
+document.getElementById('panelW').addEventListener('input', scheduleGenerate);
+document.getElementById('margin').addEventListener('input', scheduleGenerate);
+document.getElementById('pattern').addEventListener('change', scheduleGenerate);
+
+recalc();
+
+const fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', e => { if (e.target.files.length) loadImage(e.target.files[0]); });
+
+const canvasWrap = document.getElementById('canvasWrap');
+canvasWrap.addEventListener('dragover', e => { e.preventDefault(); canvasWrap.classList.add('drag-over'); });
+canvasWrap.addEventListener('dragleave', () => canvasWrap.classList.remove('drag-over'));
+canvasWrap.addEventListener('drop', e => { e.preventDefault(); canvasWrap.classList.remove('drag-over'); if (e.dataTransfer.files.length) loadImage(e.dataTransfer.files[0]); });
+
+function loadImage(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    imgEl = new Image();
+    imgEl.onload = () => {
+      document.getElementById('thumbImg').src = imgEl.src;
+      document.getElementById('thumbWrap').style.display = 'block';
+      generate();
+    };
+    imgEl.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+document.getElementById('invertToggle').addEventListener('click', function() { inverted = !inverted; this.classList.toggle('on', inverted); scheduleGenerate(); });
+document.getElementById('ditherSlider').addEventListener('input', function() {
+  ditherStrength = parseFloat(this.value);
+  document.getElementById('ditherVal').textContent = ditherStrength.toFixed(2);
+  scheduleGenerate();
+});
+document.getElementById('hollowToggle').addEventListener('click', function() {
+  hollow = !hollow;
+  this.classList.toggle('on', hollow);
+  if (holeData.length) {
+    const panelW = parseFloat(document.getElementById('panelW').value);
+    const panelH = parseFloat(document.getElementById('panelH').value);
+    const margin = parseFloat(document.getElementById('margin').value);
+    drawPreview(panelW, panelH, margin);
+  }
+});
+document.getElementById('whiteBgToggle').addEventListener('click', function() {
+  whiteBg = !whiteBg;
+  this.classList.toggle('on', whiteBg);
+  if (holeData.length) {
+    const panelW = parseFloat(document.getElementById('panelW').value);
+    const panelH = parseFloat(document.getElementById('panelH').value);
+    const margin = parseFloat(document.getElementById('margin').value);
+    drawPreview(panelW, panelH, margin);
+  }
+});
+document.getElementById('showImageToggle').addEventListener('click', function() {
+  showImage = !showImage;
+  this.classList.toggle('on', showImage);
+  document.getElementById('imageOpacityField').style.display = showImage ? 'block' : 'none';
+  if (holeData.length) {
+    const panelW = parseFloat(document.getElementById('panelW').value);
+    const panelH = parseFloat(document.getElementById('panelH').value);
+    const margin = parseFloat(document.getElementById('margin').value);
+    drawPreview(panelW, panelH, margin);
+  }
+});
+document.getElementById('imageOpacitySlider').addEventListener('input', function() {
+  imageOpacity = parseInt(this.value) / 100;
+  document.getElementById('imageOpacityVal').textContent = this.value + '%';
+  if (holeData.length && showImage) {
+    const panelW = parseFloat(document.getElementById('panelW').value);
+    const panelH = parseFloat(document.getElementById('panelH').value);
+    const margin = parseFloat(document.getElementById('margin').value);
+    drawPreview(panelW, panelH, margin);
+  }
+});
+document.getElementById('gammaSlider').addEventListener('input', function() {
+  gamma = parseFloat(this.value);
+  document.getElementById('gammaVal').textContent = gamma.toFixed(2);
+  scheduleGenerate();
+});
+
+// Box blur applied 3 passes to approximate Gaussian
+// Bilinear interpolation brightness sample from full-res image data
+function sampleBilinear(id, w, h, fx, fy) {
+  const x0 = Math.floor(fx), y0 = Math.floor(fy);
+  const x1 = Math.min(x0 + 1, w - 1), y1 = Math.min(y0 + 1, h - 1);
+  const tx = fx - x0, ty = fy - y0;
+  function luma(idx) { return id[idx] * 0.299 + id[idx+1] * 0.587 + id[idx+2] * 0.114; }
+  const tl = luma((y0 * w + x0) * 4);
+  const tr = luma((y0 * w + x1) * 4);
+  const bl = luma((y1 * w + x0) * 4);
+  const br = luma((y1 * w + x1) * 4);
+  return (tl * (1-tx) * (1-ty) + tr * tx * (1-ty) + bl * (1-tx) * ty + br * tx * ty) / 255;
+}
+
+function generate() {
+  if (!imgEl) return;
+  if (!recalc()) { alert('Check your settings.'); return; }
+  const visibleSizes = activeSizes.filter(s => !hiddenSizes.has(r4(s)));
+  if (visibleSizes.length < 2) { alert('Need at least 2 visible tool sizes.'); return; }
+
+  const panelW = parseFloat(document.getElementById('panelW').value);
+  const panelH = parseFloat(document.getElementById('panelH').value);
+  const margin = parseFloat(document.getElementById('margin').value);
+  const matThk = parseFloat(document.getElementById('matThk').value);
+  const sliderMin = parseFloat(document.getElementById('sliderMin').value);
+  const minDia = Math.max(sliderMin, matThk);
+  const maxDia = parseFloat(document.getElementById('sliderMax').value);
+  const ctc = r4(maxDia + matThk);
+  const angle = parseFloat(document.getElementById('pattern').value);
+  const perfW = panelW - margin * 2, perfH = panelH - margin * 2;
+
+  let cSpace, rSpace;
+  if (angle === 0) { cSpace = ctc; rSpace = ctc; }
+  else { const rad = angle * Math.PI / 180; cSpace = ctc * Math.cos(rad); rSpace = ctc * Math.sin(rad); }
+
+  const maxRad = maxDia / 2;
+  const bboxW = Math.floor((perfW - maxDia) / cSpace) * cSpace + maxDia;
+  const bboxH = Math.floor((perfH - maxDia) / rSpace) * rSpace + maxDia;
+  const cCount = Math.round((bboxW - maxDia) / cSpace) + 1;
+  const rCount = Math.round((bboxH - maxDia) / rSpace) + 1;
+  const baseX = margin + (perfW - bboxW) / 2 + maxRad;
+  const baseY = margin + (perfH - bboxH) / 2 + maxRad;
+
+  let nonOffsetCols, offsetCols, colStep;
+  if (angle === 0) { nonOffsetCols = cCount; offsetCols = cCount; colStep = cSpace; }
+  else { nonOffsetCols = Math.ceil(cCount / 2); offsetCols = cCount - nonOffsetCols; colStep = 2 * cSpace; }
+
+  // Draw image at full resolution for bilinear sampling
+  const tc = document.createElement('canvas');
+  const tx = tc.getContext('2d');
+  tc.width = imgEl.naturalWidth; tc.height = imgEl.naturalHeight;
+  tx.drawImage(imgEl, 0, 0);
+  const id = tx.getImageData(0, 0, tc.width, tc.height).data;
+  const imgW = tc.width, imgH = tc.height;
+
+  // Error diffusion buffer [row][col] in diameter space
+  const errBuf = [];
+  for (let i = 0; i <= rCount; i++) errBuf.push(new Float32Array(cCount + 2));
+
+  holeData = [];
+  for (let i = 0; i < rCount; i++) {
+    let rowCols, xStart, colOff;
+    if (angle === 0) { rowCols = nonOffsetCols; xStart = baseX; colOff = 0; }
+    else if (i % 2 === 0) { rowCols = offsetCols; xStart = baseX + cSpace; colOff = 1; }
+    else { rowCols = nonOffsetCols; xStart = baseX; colOff = 0; }
+
+    for (let j = 0; j < rowCols; j++) {
+      const hx = xStart + j * colStep;
+      const hy = baseY + i * rSpace;
+      const sc = angle === 0 ? j : j * 2 + colOff;
+      const sr = rCount - 1 - i;
+      const fx = (sc / (cCount - 1)) * (imgW - 1);
+      const fy = (sr / (rCount - 1)) * (imgH - 1);
+      const brightness = sampleBilinear(id, imgW, imgH, fx, fy);
+      const adjustedBrightness = Math.pow(brightness, gamma);
+
+      let rawDia;
+      if (inverted) rawDia = minDia + adjustedBrightness * (maxDia - minDia);
+      else rawDia = minDia + (1 - adjustedBrightness) * (maxDia - minDia);
+
+      let dia;
+      if (ditherStrength > 0) {
+        const adjusted = Math.min(maxDia, Math.max(minDia, rawDia + errBuf[i][j + 1]));
+        dia = snapToNearest(adjusted, activeSizes);
+        const err = (adjusted - dia) * ditherStrength;
+        if (j + 1 < rowCols)     errBuf[i][j + 2]     += err * 7 / 16;
+        if (i + 1 < rCount) {
+          if (j > 0)             errBuf[i + 1][j]     += err * 3 / 16;
+                                 errBuf[i + 1][j + 1] += err * 5 / 16;
+          if (j + 1 < rowCols)   errBuf[i + 1][j + 2] += err * 1 / 16;
+        }
+      } else {
+        dia = snapToNearest(rawDia, activeSizes);
+      }
+
+      holeData.push({ x: hx, y: hy, dia: dia });
+    }
+  }
+
+  drawPreview(panelW, panelH, margin);
+  updateStats(angle, ctc);
+  document.getElementById('exportBtn').disabled = false;
+  document.getElementById('dxfBtn').disabled = false;
+  document.getElementById('pngBtn').disabled = false;
+  document.getElementById('jpgBtn').disabled = false;
+  document.getElementById('jsonExportBtn').disabled = false;
+}
+
+function drawPreview(panelW, panelH, margin) {
+  const canvas = document.getElementById('preview');
+  const ctx = canvas.getContext('2d');
+  const maxW = window.innerWidth - 460, maxH = window.innerHeight - 140;
+  const scale = Math.min(maxW / panelW, maxH / panelH, 8);
+  canvas.width = panelW * scale; canvas.height = panelH * scale;
+
+  // Background
+  ctx.fillStyle = whiteBg ? '#ffffff' : '#2a2d3a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Image underlay
+  if (showImage && imgEl) {
+    ctx.save();
+    ctx.globalAlpha = imageOpacity;
+    ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+
+  // Panel border
+  ctx.strokeStyle = whiteBg ? '#cccccc' : '#4a4d5a';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(margin * scale, margin * scale, (panelW - 2*margin) * scale, (panelH - 2*margin) * scale);
+
+  // Holes
+  for (const h of holeData) {
+    const cx = h.x * scale, cy = (panelH - h.y) * scale;
+    const r = (h.dia / 2) * scale;
+    ctx.beginPath();
+    ctx.arc(cx, cy, Math.max(r, 0.5), 0, Math.PI * 2);
+    if (hollow) {
+      ctx.strokeStyle = whiteBg ? '#222222' : '#e4e6f0';
+      ctx.lineWidth = Math.max(0.5, r * 0.12);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = whiteBg ? '#222222' : '#e4e6f0';
+      ctx.fill();
+    }
+  }
+
+  document.getElementById('emptyState').style.display = 'none';
+  canvas.style.display = 'block';
+}
+
+function updateStats(angle, ctc) {
+  const countMap = {};
+  for (const h of holeData) { const key = h.dia.toFixed(4); countMap[key] = (countMap[key] || 0) + 1; }
+  const diameters = holeData.map(h => h.dia);
+  const minUsed = Math.min(...diameters), maxUsed = Math.max(...diameters);
+  const usedSizes = Object.keys(countMap).sort((a, b) => parseFloat(a) - parseFloat(b));
+  const maxCount = Math.max(...Object.values(countMap));
+
+  document.getElementById('statHoles').textContent = holeData.length.toLocaleString();
+  document.getElementById('statSizes').textContent = usedSizes.length;
+  document.getElementById('statMin').textContent = formatSize(minUsed);
+  document.getElementById('statMax').textContent = formatSize(maxUsed);
+  document.getElementById('statCTC').textContent = formatSize(ctc) + '  (' + ctc + ')';
+  document.getElementById('statGrid').textContent = angle + '\u00B0' + (angle === 0 ? ' Straight' : ' Stagger');
+
+  let bdHtml = '';
+  for (const key of usedSizes) {
+    const dia = parseFloat(key);
+    const count = countMap[key];
+    const pct = (count / maxCount) * 100;
+    bdHtml += '<div class="bd-row"><span class="sz">' + formatSize(dia) + '</span><span class="bar-wrap"><span class="bar" style="width:' + pct + '%"></span></span><span class="ct">' + count.toLocaleString() + '</span></div>';
+  }
+  document.getElementById('breakdownList').innerHTML = bdHtml;
+  document.getElementById('statsBox').style.display = 'block';
+}
+
+document.getElementById('exportBtn').addEventListener('click', function() {
+  if (!holeData.length) return;
+  let csv = 'X,Y,Diameter\n';
+  for (const h of holeData) {
+    if (hiddenSizes.has(r4(h.dia))) continue;
+    csv += h.x.toFixed(6) + ',' + h.y.toFixed(6) + ',' + h.dia.toFixed(4) + '\n';
+  }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'image_punch_data.csv'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('dxfBtn').addEventListener('click', function() {
+  if (!holeData.length) return;
+  let dxf = '0\nSECTION\n2\nHEADER\n0\nENDSEC\n';
+  dxf += '0\nSECTION\n2\nTABLES\n';
+  dxf += '0\nTABLE\n2\nLAYER\n70\n1\n';
+  dxf += '0\nLAYER\n2\nPUNCH\n70\n0\n62\n7\n6\nCONTINUOUS\n';
+  dxf += '0\nENDTAB\n0\nENDSEC\n';
+  dxf += '0\nSECTION\n2\nENTITIES\n';
+  for (const h of holeData) {
+    if (hiddenSizes.has(r4(h.dia))) continue;
+    dxf += '0\nCIRCLE\n8\nPUNCH\n';
+    dxf += '10\n' + h.x.toFixed(6) + '\n';
+    dxf += '20\n' + h.y.toFixed(6) + '\n';
+    dxf += '30\n0.0\n';
+    dxf += '40\n' + (h.dia / 2).toFixed(6) + '\n';
+  }
+  dxf += '0\nENDSEC\n0\nEOF\n';
+  const blob = new Blob([dxf], { type: 'application/dxf' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'image_punch_data.dxf'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+// PNG Export
+document.getElementById('pngBtn').addEventListener('click', function() {
+  const canvas = document.getElementById('preview');
+  if (!canvas || !holeData.length) return;
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'image_punch_preview.png';
+  a.click();
+});
+
+// JPG Export
+document.getElementById('jpgBtn').addEventListener('click', function() {
+  const canvas = document.getElementById('preview');
+  if (!canvas || !holeData.length) return;
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/jpeg', 0.92);
+  a.download = 'image_punch_preview.jpg';
+  a.click();
+});
+
+// JSON Export
+document.getElementById('jsonExportBtn').addEventListener('click', function() {
+  if (!holeData.length) return;
+  const payload = {
+    version: 1,
+    settings: {
+      panelH: parseFloat(document.getElementById('panelH').value),
+      panelW: parseFloat(document.getElementById('panelW').value),
+      margin: parseFloat(document.getElementById('margin').value),
+      matThk: parseFloat(document.getElementById('matThk').value),
+      sliderMin: parseFloat(document.getElementById('sliderMin').value),
+      sliderMax: parseFloat(document.getElementById('sliderMax').value),
+      toolCount: parseInt(document.getElementById('toolCountSlider').value),
+      pattern: document.getElementById('pattern').value,
+      inverted: inverted,
+      ditherStrength: ditherStrength,
+      gamma: gamma,
+      hollow: hollow,
+      whiteBg: whiteBg,
+      showImage: showImage,
+      imageOpacity: imageOpacity,
+      hiddenSizes: Array.from(hiddenSizes),
+      customSizes: customSizes.slice()
+    },
+    holeData: holeData
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'image_punch_session.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+// JSON Load
+document.getElementById('jsonLoadBtn').addEventListener('click', function() {
+  document.getElementById('jsonFileInput').click();
+});
+
+document.getElementById('jsonFileInput').addEventListener('change', function(e) {
+  if (!e.target.files.length) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const payload = JSON.parse(ev.target.result);
+      if (!payload.settings || !payload.holeData) { alert('Invalid session file.'); return; }
+      const s = payload.settings;
+      document.getElementById('panelH').value = s.panelH;
+      document.getElementById('panelW').value = s.panelW;
+      document.getElementById('margin').value = s.margin;
+      document.getElementById('matThk').value = s.matThk;
+      document.getElementById('sliderMin').value = s.sliderMin;
+      document.getElementById('sliderMax').value = s.sliderMax;
+      document.getElementById('toolCountSlider').value = s.toolCount;
+      document.getElementById('pattern').value = s.pattern;
+      inverted = s.inverted || false;
+      ditherStrength = s.ditherStrength != null ? s.ditherStrength : 0;
+      gamma = s.gamma != null ? s.gamma : 1.0;
+      document.getElementById('gammaSlider').value = gamma;
+      document.getElementById('gammaVal').textContent = gamma.toFixed(2);
+      document.getElementById('invertToggle').classList.toggle('on', inverted);
+      document.getElementById('ditherSlider').value = ditherStrength;
+      document.getElementById('ditherVal').textContent = ditherStrength.toFixed(2);
+      hollow = s.hollow || false;
+      document.getElementById('hollowToggle').classList.toggle('on', hollow);
+      whiteBg = s.whiteBg || false;
+      document.getElementById('whiteBgToggle').classList.toggle('on', whiteBg);
+      showImage = s.showImage || false;
+      document.getElementById('showImageToggle').classList.toggle('on', showImage);
+      document.getElementById('imageOpacityField').style.display = showImage ? 'block' : 'none';
+      imageOpacity = s.imageOpacity != null ? s.imageOpacity : 0.4;
+      const opacityPct = Math.round(imageOpacity * 100);
+      document.getElementById('imageOpacitySlider').value = opacityPct;
+      document.getElementById('imageOpacityVal').textContent = opacityPct + '%';
+      hiddenSizes = new Set((s.hiddenSizes || []).map(v => r4(v)));
+      customSizes = s.customSizes || [];
+      holeData = payload.holeData;
+      recalc();
+      drawPreview(s.panelW, s.panelH, s.margin);
+      updateStats(parseFloat(s.pattern), r4(s.sliderMax + s.matThk));
+      document.getElementById('exportBtn').disabled = false;
+      document.getElementById('dxfBtn').disabled = false;
+      document.getElementById('pngBtn').disabled = false;
+      document.getElementById('jpgBtn').disabled = false;
+      document.getElementById('jsonExportBtn').disabled = false;
+    } catch(err) {
+      alert('Could not load file: ' + err.message);
+    }
+  };
+  reader.readAsText(e.target.files[0]);
+  this.value = '';
+});
+</script>
+</body>
+</html>
